@@ -1,0 +1,11 @@
+server:
+  port: 9096
+  mount-path: /data/cloud/CloudDrive
+
+alist:
+  url: http://172.0.0.1:5244
+  token: alist-xxxxx
+
+emby:
+  url: http://172.0.0.1:8096
+  apikey: xxxxxx
