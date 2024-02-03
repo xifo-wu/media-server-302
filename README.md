@@ -3,6 +3,7 @@
 使用 Gin 实现的简单直链服务，依赖于 Alist 302 服务。
 
 ## 配置
+新建一个 config.yaml 文件，内容如下：
 
 ```yaml
 server:
