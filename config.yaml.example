@@ -1,5 +1,4 @@
 server:
-  port: 9096
   mount-path: /data/cloud/CloudDrive
 
 alist:

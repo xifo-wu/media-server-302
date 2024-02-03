@@ -25,7 +25,10 @@ func Init() *zap.Logger {
 	})
 
 	// 设置中国时区
-	chnLoc, _ := time.LoadLocation("Asia/Shanghai")
+	chnLoc, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		panic(fmt.Errorf("failed to load Asia/Shanghai location: %w", err))
+	}
 
 	// 自定义时间格式化函数
 	customTimeEncoder := func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
