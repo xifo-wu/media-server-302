@@ -15,8 +15,8 @@
 ```yaml
 server:
   # 替换成自己的挂载路径
+  # 如果你的 Emby 运行在 Windows 下，可以向下面这样填 mount-page: "F:" (大概是这样吧)
   mount-path: /data/cloud/CloudDrive
-  # 如果你的 Emby 运行在 Windows 下，可以向下面这样填
 
 alist:
   url: http://172.0.0.1:5244
