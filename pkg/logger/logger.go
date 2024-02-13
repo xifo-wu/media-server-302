@@ -19,7 +19,7 @@ func Init() *zap.Logger {
 		Filename:   logFilePath, // 指定日志文件路径
 		MaxSize:    100,         // 日志文件的最大大小（MB）
 		MaxBackups: 3,           // 最多保留的旧日志文件数
-		MaxAge:     2,           // 保留旧日志文件的最长天数
+		MaxAge:     7,           // 保留旧日志文件的最长天数
 		LocalTime:  true,        // 使用本地时间
 		// Compress:   true,        // 是否压缩旧日志文件
 	})
