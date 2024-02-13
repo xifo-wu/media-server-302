@@ -2,13 +2,21 @@
 
 使用 Gin 实现的简单直链服务，依赖于 Alist 302 服务。
 
-## 配置
+## 如何使用
+
+### 前置条件
+
+- 已经安装了 Alist，Emby 以及挂载路径（如 Rclone Mount 或 Clouddrive2）
+
+
+### 配置文件
 新建一个 config.yaml 文件，内容如下：
 
 ```yaml
 server:
   # 替换成自己的挂载路径
   mount-path: /data/cloud/CloudDrive
+  # 如果你的 Emby 运行在 Windows 下，可以向下面这样填
 
 alist:
   url: http://172.0.0.1:5244
@@ -16,13 +24,13 @@ alist:
 
 emby:
   url: http://172.0.0.1:8096
+  # v1.0.0 后可不填
   apikey: xxxxxx
 
 ```
 
 `mount-path` 说明：用于替换路径前缀。例如 Emby Docker 内的路径是 /data/cloud/CloudDrive/ali-open，alist 挂载的路径 `/ali-open`， 那么此处填写 `/data/cloud/CloudDrive` 即可。
 
-## 使用
 
 ### Dockerfile
 
