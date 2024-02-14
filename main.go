@@ -16,6 +16,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+func ensureLeadingSlash(alistPath string) string {
+	if !strings.HasPrefix(alistPath, "/") {
+		alistPath = "/" + alistPath // 不是以 / 开头，加上 /
+	}
+	return alistPath
+}
+
 func extractIDFromPath(path string) (string, error) {
 	// 编译正则表达式
 	re := regexp.MustCompile(`/[Vv]ideos/(\S+)/(stream|original|master)`)
@@ -42,7 +49,6 @@ func main() {
 	proxy := httputil.NewSingleHostReverseProxy(url)
 
 	r.Any("/*actions", func(c *gin.Context) {
-
 		currentURI := c.Request.RequestURI
 		videoID, err := extractIDFromPath(currentURI)
 		if err != nil {
@@ -69,7 +75,9 @@ func main() {
 			return
 		}
 
+		log.Info("Emby 原地址：" + embyRes["path"].(string))
 		alistPath := strings.Replace(embyRes["path"].(string), viper.GetString("server.mount-path"), "", 1)
+		alistPath = ensureLeadingSlash(alistPath)
 		// url, err := alist.FetchAlistPathApi(viper.GetString("alist.url")+"/api/fs/get", alistPath, viper.GetString("alist.token"))
 		// if err != nil {
 		// 	log.Error(fmt.Sprintf("获取 Alist 地址失败。错误信息: %v", err))
@@ -85,7 +93,14 @@ func main() {
 			}
 		}
 
-		url, err := alist.GetRedirectURL(viper.GetString("alist.url")+"/d"+alistPath, originalHeaders)
+		alistFullUrl := viper.GetString("alist.url") + "/d" + alistPath
+		log.Info("Alist 链接：" + alistFullUrl)
+		url, err := alist.GetRedirectURL(alistFullUrl, originalHeaders)
+		if err != nil {
+			log.Error(fmt.Sprintf("获取 Alist 地址失败。错误信息: %v", err))
+			proxy.ServeHTTP(c.Writer, c.Request)
+			return
+		}
 
 		log.Info("获取重定向链接： ")
 		log.Info(url)
