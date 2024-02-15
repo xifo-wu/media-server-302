@@ -3,6 +3,8 @@ package alist
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/spf13/viper"
 )
 
 // getRedirectURL尝试获取指定路径的重定向URL。
@@ -23,6 +25,8 @@ func GetRedirectURL(modifiedPath string, originalHeaders map[string]string) (str
 	for key, value := range originalHeaders {
 		req.Header.Add(key, value)
 	}
+
+	req.Header.Add("Authorization", viper.GetString("alist.token"))
 
 	resp, err := client.Do(req)
 	if err != nil {

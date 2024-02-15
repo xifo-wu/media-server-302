@@ -2,7 +2,7 @@ version: '3'
 
 services:
   web:
-    image: "xifowu/meida-server-302:latest"
+    image: "xifowu/meida-server-302:beta"
     container_name: "meida-server"
     ports:
       - "9096:9096"

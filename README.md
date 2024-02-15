@@ -24,7 +24,6 @@ alist:
 
 emby:
   url: http://172.0.0.1:8096
-  # v1.0.0 后可不填
   apikey: xxxxxx
 
 ```
