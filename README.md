@@ -54,5 +54,10 @@ services:
       - ./logs:/logs
 ```
 
+## FAQ
+
+##### 为什么我的 /d/xxxxxx/xxxx.mkv 返回 401?
+> Alist 3.30.0 之后默认开了 Sign 签名全部，本程序虽然适配了生成 Sign，但仍有可能失效。实在不行你可以去 Alist 全局配置里关掉
+
 ## 致谢
 参考 https://blog.738888.xyz/posts/emby_jellyfin_to_alist_directlink
