@@ -75,5 +75,5 @@ func FetchAlistPathApi(alistApiPath, alistFilePath, alistToken string) (string, 
 		return strings.Join(fileNames, ","), nil
 	}
 
-	return "", fmt.Errorf("Alist 未知错误")
+	return "", fmt.Errorf("error: 未知错误")
 }
