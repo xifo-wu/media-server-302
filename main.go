@@ -93,7 +93,9 @@ func main() {
 			}
 		}
 
-		alistFullUrl := viper.GetString("alist.url") + "/d" + alistPath
+		sign := alist.Sign(alistPath, 0)
+
+		alistFullUrl := viper.GetString("alist.url") + "/d" + alistPath + "?sign=" + sign
 		log.Info("Alist 链接：" + alistFullUrl)
 		url, err := alist.GetRedirectURL(alistFullUrl, originalHeaders)
 		if err != nil {

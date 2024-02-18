@@ -3,20 +3,18 @@ package alist
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/spf13/viper"
 )
 
 // getRedirectURL尝试获取指定路径的重定向URL。
 // 如果状态码是302，则返回重定向的URL，否则返回空字符串和错误。
-func GetRedirectURL(modifiedPath string, originalHeaders map[string]string) (string, error) {
+func GetRedirectURL(modifiedUrl string, originalHeaders map[string]string) (string, error) {
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse // 仅获取重定向URL，不跟随
 		},
 	}
 
-	req, err := http.NewRequest("GET", modifiedPath, nil)
+	req, err := http.NewRequest("GET", modifiedUrl, nil)
 	if err != nil {
 		return "", err // 创建请求失败
 	}
@@ -25,8 +23,6 @@ func GetRedirectURL(modifiedPath string, originalHeaders map[string]string) (str
 	for key, value := range originalHeaders {
 		req.Header.Add(key, value)
 	}
-
-	req.Header.Add("Authorization", viper.GetString("alist.token"))
 
 	resp, err := client.Do(req)
 	if err != nil {
