@@ -4,7 +4,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"fmt"
 	"io"
 	"strconv"
 
@@ -16,7 +15,6 @@ func Sign(data string, expire int64) string {
 
 	expireTimeStamp := strconv.FormatInt(expire, 10)
 	_, err := io.WriteString(h, data+":"+expireTimeStamp)
-	fmt.Println(h.Sum(nil), "........")
 	if err != nil {
 		return ""
 	}
