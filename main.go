@@ -16,10 +16,18 @@ import (
 	"github.com/spf13/viper"
 )
 
+func convertToLinuxPath(windowsPath string) string {
+	// 将所有的反斜杠转换成正斜杠
+	linuxPath := strings.ReplaceAll(windowsPath, "\\", "/")
+	return linuxPath
+}
+
 func ensureLeadingSlash(alistPath string) string {
 	if !strings.HasPrefix(alistPath, "/") {
 		alistPath = "/" + alistPath // 不是以 / 开头，加上 /
 	}
+
+	alistPath = convertToLinuxPath(alistPath)
 	return alistPath
 }
 
