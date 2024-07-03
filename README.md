@@ -34,7 +34,7 @@ emby:
 ### Dockerfile
 
 ```bash
-docker run -d --name meida-server-1 -p 9096:9096 -v ./config.yaml:/config.yaml -v ./logs:/logs xifowu/meida-server-302:latest
+docker run -d --name media-server-1 -p 9096:9096 -v ./config.yaml:/config.yaml -v ./logs:/logs xifowu/media-server-302:latest
 ```
 
 ### Docker Compose
@@ -45,8 +45,8 @@ version: '3'
 
 services:
   web:
-    image: "xifowu/meida-server-302:latest"
-    container_name: "meida-server"
+    image: "xifowu/media-server-302:latest"
+    container_name: "media-server"
     ports:
       - "9096:9096"
     volumes:
