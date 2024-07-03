@@ -15,7 +15,8 @@ RUN go mod download
 COPY . .
 
 # 构建应用程序：编译Go源代码生成二进制可执行文件
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o mserver .
+# RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o mserver .
+RUN go build -o mserver
 
 # 使用官方Alpine Linux镜像作为运行环境，由于它体积较小
 FROM alpine:latest

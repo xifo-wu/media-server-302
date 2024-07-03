@@ -1,9 +1,7 @@
-version: '3'
-
 services:
   web:
-    image: "xifowu/meida-server-302:beta"
-    container_name: "meida-server"
+    image: "xifowu/media-server-302:beta"
+    container_name: "media-server"
     ports:
       - "9096:9096"
     volumes:
