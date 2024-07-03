@@ -1,18 +1,23 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"media-server-302/pkg/alist"
 	"media-server-302/pkg/config"
 	"media-server-302/pkg/emby"
 	"media-server-302/pkg/logger"
 	"net/http"
+	"net/http/httptest"
 	"net/http/httputil"
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/patrickmn/go-cache"
 	"github.com/spf13/viper"
 )
 
@@ -51,13 +56,29 @@ func main() {
 	log := logger.Init()
 	r := gin.Default()
 
+	goCache := cache.New(1*time.Minute, 3*time.Minute)
+
 	embyURL := viper.GetString("emby.url")
 	url, _ := url.Parse(embyURL)
 
 	proxy := httputil.NewSingleHostReverseProxy(url)
 
 	r.Any("/*actions", func(c *gin.Context) {
+		response, skip := ProxyPlaybackInfo(c, proxy)
+		if !skip {
+			c.JSON(http.StatusOK, response)
+			return
+		}
+
 		currentURI := c.Request.RequestURI
+		cacheKey := RemoveQueryParams(currentURI)
+
+		if cacheLink, found := goCache.Get(cacheKey); found {
+			log.Info("命中缓存")
+			c.Redirect(302, cacheLink.(string))
+			return
+		}
+
 		videoID, err := extractIDFromPath(currentURI)
 		if err != nil {
 			proxy.ServeHTTP(c.Writer, c.Request)
@@ -105,20 +126,121 @@ func main() {
 
 		alistFullUrl := viper.GetString("alist.url") + "/d" + alistPath + "?sign=" + sign
 		log.Info("Alist 链接：" + alistFullUrl)
-		url, err := alist.GetRedirectURL(alistFullUrl, originalHeaders)
-		if err != nil {
-			log.Error(fmt.Sprintf("获取 Alist 地址失败。错误信息: %v", err))
-			proxy.ServeHTTP(c.Writer, c.Request)
-			return
-		}
+		// url, err := alist.GetRedirectURL(alistFullUrl, originalHeaders)
+		// if err != nil {
+		// 	log.Error(fmt.Sprintf("获取 Alist 地址失败。错误信息: %v", err))
+		// 	proxy.ServeHTTP(c.Writer, c.Request)
+		// 	return
+		// }
 
-		log.Info("获取重定向链接： ")
-		log.Info(url)
+		// log.Info("获取重定向链接： ")
+		// log.Info(url)
 
-		c.Redirect(http.StatusFound, url)
+		goCache.Set(cacheKey, alistFullUrl, cache.DefaultExpiration)
+		c.Redirect(http.StatusFound, alistFullUrl)
 	})
 
 	if err := r.Run(":9096"); err != nil {
 		panic(err)
 	}
+}
+
+func RemoveQueryParams(originalURL string) string {
+	parsedURL, err := url.Parse(originalURL)
+	if err != nil {
+		return originalURL
+	}
+	parsedURL.RawQuery = ""
+	return parsedURL.String()
+}
+
+func ProxyPlaybackInfo(c *gin.Context, proxy *httputil.ReverseProxy) (response map[string]any, skip bool) {
+	currentURI := c.Request.RequestURI
+
+	re := regexp.MustCompile(`/[Ii]tems/(\S+)/PlaybackInfo`)
+	matches := re.FindStringSubmatch(currentURI)
+	if len(matches) < 1 {
+		return nil, true
+	}
+
+	// 创建记录器来存储响应内容
+	recorder := httptest.NewRecorder()
+
+	// 代理请求
+	proxy.ServeHTTP(recorder, c.Request)
+
+	// 处理代理返回结果
+	err := json.Unmarshal(recorder.Body.Bytes(), &response)
+	if err != nil {
+		return response, true
+	}
+
+	// 获取代理返回的响应头
+	for key, values := range recorder.Header() {
+		for _, value := range values {
+			if key == "Content-Length" {
+				continue
+			}
+			c.Writer.Header().Set(key, value)
+		}
+	}
+
+	mediaSources := response["MediaSources"].([]interface{})
+	for _, mediaSource := range mediaSources {
+		ms := mediaSource.(map[string]interface{})
+
+		isCloud := hitReplacePath(ms["Path"].(string))
+		if !isCloud {
+			log.Println("跳过：不是云盘文件")
+			continue
+		}
+
+		// DEBUG 用
+		ms["XOriginDirectStreamUrl"] = ms["DirectStreamUrl"]
+		ms["SupportsDirectPlay"] = true
+		ms["SupportsTranscoding"] = false
+		ms["SupportsDirectStream"] = true
+
+		delete(ms, "TranscodingUrl")
+		delete(ms, "TranscodingSubProtocol")
+		delete(ms, "TranscodingContainer")
+
+		isInfiniteStream := ms["IsInfiniteStream"].(bool)
+		localtionPath := "stream"
+		if isInfiniteStream {
+			localtionPath = "master"
+		}
+
+		fileExt := ms["Container"]
+		if isInfiniteStream && (ms["Container"] == "" || ms["Container"] == "hls") {
+			fileExt = "m3u8"
+		}
+
+		streamPart := fmt.Sprintf("%s.%s", localtionPath, fileExt)
+
+		replacePath := strings.ReplaceAll(replaceIgnoreCase(currentURI, "/items", "/videos"), "PlaybackInfo", streamPart)
+
+		parsedURL, _ := url.Parse(replacePath)
+		params := parsedURL.Query()
+		params.Set("MediaSourceId", ms["Id"].(string))
+		params.Set("PlaySessionId", response["PlaySessionId"].(string))
+		params.Set("Static", "true")
+		parsedURL.RawQuery = params.Encode()
+		ms["DirectStreamUrl"] = parsedURL.String()
+	}
+
+	response["302"] = "true"
+
+	return response, false
+}
+
+func hitReplacePath(path string) bool {
+	p := viper.GetString("server.mount-path")
+
+	return strings.HasPrefix(path, p)
+}
+
+func replaceIgnoreCase(input string, old string, new string) string {
+	re := regexp.MustCompile("(?i)" + regexp.QuoteMeta(old))
+	return re.ReplaceAllString(input, new)
 }
