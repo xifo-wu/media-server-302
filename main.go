@@ -55,6 +55,7 @@ func main() {
 	config.Init()
 	log := logger.Init()
 	r := gin.Default()
+	log.Info("MEDIA-SERVER-302")
 
 	goCache := cache.New(1*time.Minute, 3*time.Minute)
 
@@ -99,6 +100,11 @@ func main() {
 		embyRes, err := emby.GetEmbyItems(itemInfoUri, itemId, etag, mediaSourceId, apiKey)
 		if err != nil {
 			log.Error(fmt.Sprintf("获取 Emby 失败。错误信息: %v", err))
+			proxy.ServeHTTP(c.Writer, c.Request)
+			return
+		}
+
+		if !strings.HasPrefix(embyRes["path"].(string), viper.GetString("server.mount-path")) {
 			proxy.ServeHTTP(c.Writer, c.Request)
 			return
 		}
