@@ -44,7 +44,12 @@ func GetItemPathInfo(c *gin.Context) (itemInfoUri string, itemId string, etag st
 		itemInfoUri = embyHost + "/Sync/JobItems?api_key=" + apiKey
 	} else {
 		if mediaSourceId != "" {
-			itemInfoUri = embyHost + "/Items?Ids=" + mediaSourceId + "&Fields=Path,MediaSources&Limit=1&api_key=" + apiKey
+			newMediaSourceId := mediaSourceId
+			if strings.HasPrefix(mediaSourceId, "mediasource_") {
+				newMediaSourceId = strings.Replace(mediaSourceId, "mediasource_", "", 1)
+			}
+
+			itemInfoUri = embyHost + "/Items?Ids=" + newMediaSourceId + "&Fields=Path,MediaSources&Limit=1&api_key=" + apiKey
 		} else {
 			itemInfoUri = embyHost + "/Items?Ids=" + itemId + "&Fields=Path,MediaSources&Limit=1&api_key=" + apiKey
 		}
