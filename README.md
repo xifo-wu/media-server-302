@@ -20,6 +20,9 @@ server:
 
 alist:
   url: http://172.0.0.1:5244
+  # 替换成你的 Alist 公网可访问地址, infuse, emby ios 客户端需要。
+  # 填公网地址可修复 infuse 进度条问题。
+  pubilc-url: https://alist.xxxx.xxx
   token: alist-xxxxx
 
 emby:

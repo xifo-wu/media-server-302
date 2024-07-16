@@ -72,7 +72,8 @@ func main() {
 		}
 
 		currentURI := c.Request.RequestURI
-		cacheKey := RemoveQueryParams(currentURI)
+		userAgent := strings.ToLower(c.Request.Header.Get("User-Agent"))
+		cacheKey := RemoveQueryParams(currentURI) + userAgent
 
 		if cacheLink, found := goCache.Get(cacheKey); found {
 			log.Info("命中缓存")
@@ -115,11 +116,42 @@ func main() {
 
 		sign := alist.Sign(alistPath, 0)
 
-		alistFullUrl := viper.GetString("alist.url") + "/d" + alistPath + "?sign=" + sign
-		log.Info("Alist 链接：" + alistFullUrl)
+		fullPath := "/d" + alistPath + "?sign=" + sign
+		alistFullUrl := viper.GetString("alist.url") + fullPath
 
-		goCache.Set(cacheKey, alistFullUrl, cache.DefaultExpiration)
-		c.Redirect(http.StatusFound, alistFullUrl)
+		// 如果是 infuse 走 alist 公网地址
+		if strings.Contains(userAgent, "infuse") {
+			// 设置公网地址
+			if viper.GetString("alist.public-url") != "" {
+				alistFullUrl = viper.GetString("alist.public-url") + fullPath
+				log.Info("Alist 链接：" + alistFullUrl)
+			}
+
+			goCache.Set(cacheKey, alistFullUrl, cache.DefaultExpiration)
+			c.Redirect(http.StatusFound, alistFullUrl)
+			return
+		}
+
+		log.Info("Alist 链接：" + alistFullUrl)
+		// 其他客户端继续走老的
+
+		// 从Gin的请求上下文中获取请求头
+		originalHeaders := make(map[string]string)
+		for key, value := range c.Request.Header {
+			if len(value) > 0 {
+				originalHeaders[key] = value[0]
+			}
+		}
+
+		url, err := alist.GetRedirectURL(alistFullUrl, originalHeaders)
+		if err != nil {
+			log.Error(fmt.Sprintf("获取 Alist 地址失败。错误信息: %v", err))
+			proxy.ServeHTTP(c.Writer, c.Request)
+			return
+		}
+
+		goCache.Set(cacheKey, url, cache.DefaultExpiration)
+		c.Redirect(http.StatusFound, url)
 	})
 
 	if err := r.Run(":9096"); err != nil {
