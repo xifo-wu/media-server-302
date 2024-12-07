@@ -1,3 +1,6 @@
+## 可以试试新的
+- [文档地址](https://sturdy-request-899.notion.site/Film-Fusion-15183e8ce9cc800e88edc3ab5c2627c0?pvs=74)
+  
 # Media Server 302
 
 使用 Gin 实现的简单直链服务，依赖于 Alist 302 服务。
